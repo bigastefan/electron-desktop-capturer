@@ -13,8 +13,6 @@ export class HomeComponent {
   outgoing: string;
   desktopStream: any = null;
   stream: MediaStream;
-  // remoteStream: MediaStream;
-  // peer: BetterSimplePeer;
   newPeer: BetterSimplePeer;
   selectedSource: String;
   sources: DesktopCapturerSource[];
@@ -28,7 +26,11 @@ export class HomeComponent {
   private createPeer(isInitiator) {
     const peer = BetterSimplePeer.createInstance({
       initiator: isInitiator,
-      onConnect: () => console.log('connected')
+      onConnect: () => console.log('connected'),
+      onError: (instance) => {
+        this.peers = this.peers.filter(p => p !== instance);
+        console.log({ peers: this.peers });
+      }
     });
 
     peer.sdp$().subscribe(sdp => {
@@ -69,31 +71,12 @@ export class HomeComponent {
     this.peers.forEach(p => p.setSdp(sdp)); // for now
   }
 
-  send() {
-    // this.p.send(this.msg);
-    // this.msg = '';
-  }
-
   async turnOnCamera() {
     const stream = await getUserMedia({ audio: true, video: true });
     console.log('turned on');
     console.log({ stream });
     this.stream = stream;
   }
-
-  turnOfCamera() {
-    // this.myVideo.nativeElement.srcObject = null;
-  }
-
-  // async addStreamToConnection() {
-  //   const newPeer = this.createPeer(true);
-  //   newPeer.addStream(this.stream);
-  //   this.peer = newPeer;
-  // }
-
-  // async removeStreamFromConnection() {
-  //   this.peer.removeStream(this.stream);
-  // }
 
   async desktopCapturing(newSource?: string) {
     const sources = await desktopCapturer.getSources({ types: ['window', 'screen'] });

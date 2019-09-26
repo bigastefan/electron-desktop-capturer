@@ -9,11 +9,13 @@ export class BetterSimplePeer {
   static createInstance(options: {
     initiator: boolean,
     onConnect: (instance: BetterSimplePeer) => void,
+    onError: (instance: BetterSimplePeer) => void
   }) {
-    const { initiator, onConnect } = options;
+    const { initiator, onConnect, onError } = options;
     const instance = new BetterSimplePeer(initiator);
 
     instance.connect$().subscribe(() => onConnect(instance));
+    instance.error$().subscribe(() => onError(instance));
     instance.stream$().subscribe(stream => instance.remoteStream = stream);
 
     return instance;
