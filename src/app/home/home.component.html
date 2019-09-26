@@ -15,27 +15,25 @@
   <button (click)="turnOfCamera()">Turn Off Camera</button>
   <button (click)="addStreamToConnection()">Add camera</button>
   <button (click)="removeStreamFromConnection()">Remove camera</button>
-  <button (click)="addAudioTrack()">Add audio track</button>
-  <button (click)="addVideoTrack()">Add video track</button>
   <button (click)="desktopCapturing()">Add desktop stream</button>
-  <button (click)="removeVideoTrack()">Remove video track</button>
 </div>
 <div>{{ outgoing }}</div>
+
 
 <div style="width: 100%; display: flex;">
 <!--  <div *ngIf="stream">-->
 <!--    My video video-->
 <!--    <video [srcObject]="stream" autoplay></video>-->
 <!--  </div>-->
-  <div *ngIf="remoteStream">
+  <div *ngFor="let peer of peers">
     Remote video
-    <video [srcObject]="remoteStream" autoplay></video>
+    <video *ngIf="peer.remoteStream" [srcObject]="peer.remoteStream" autoplay></video>
   </div>
   <div>
     Desktop
-    <div *ngFor="let item of list">
-      <button (click)="desktopCapturing(item.name)">{{item.name}}</button>
+    <div *ngFor="let source of sources" style="display: flex">
+      <img [src]="source.thumbnail.toDataURL()" (click)="selectSource(source.id)">
     </div>
-    <video [srcObject]="desktop" autoplay #desktopElement hidden></video>
+    <video [srcObject]="desktopStream" autoplay hidden></video>
   </div>
 </div>
