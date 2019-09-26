@@ -13,6 +13,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   @ViewChild('desktopElement') desktopElement: ElementRef;
   outgoing: string;
   desktop: any = null;
+  newPeerSdp: any = null;
   title = 'simple-peer-test';
   msg = 'test';
   stream: MediaStream;
@@ -60,6 +61,28 @@ export class HomeComponent implements OnInit, AfterViewInit {
     return peer;
   }
 
+  newPeerConnection() {
+    const isNewInitiator = true;
+
+    const newPeer = new BetterSimplePeer(isNewInitiator);
+    newPeer.sdp$().subscribe(sdp => {
+      console.log('new sdp',{ sdp });
+      this.newPeerSdp = sdp;
+      this.setOutgoing(JSON.stringify(sdp));
+    });
+
+    newPeer.error$().subscribe(error => console.log({ error }));
+    newPeer.connect$().subscribe(connect => console.log({ connect }));
+    newPeer.tracks$().subscribe(trackData => console.log({ trackData }));
+
+    newPeer.stream$().subscribe(stream => {
+      console.log({ stream });
+      this.remoteStream = stream;
+    });
+    // console.log(this.remoteStream);
+    return newPeer;
+  }
+
   setAnswer(sdpValue: string, event) {
     if (!sdpValue) { return; }
 
@@ -101,9 +124,32 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   async addStreamToConnection() {
-    const newPeer = this.createPeer(true);
-    newPeer.addStream(this.stream);
-    this.peer = newPeer;
+    // const newPeer = this.createPeer(true);
+    // newPeer.addStream(this.stream);
+    // this.peer = newPeer;
+
+    const isNewInitiator = true;
+
+    const newPeer = new BetterSimplePeer(isNewInitiator);
+    newPeer.sdp$().subscribe(sdp => {
+      console.log('new sdp',{ sdp });
+      this.newPeerSdp = sdp;
+      this.setOutgoing(JSON.stringify(sdp));
+    });
+
+    newPeer.error$().subscribe(error => console.log({ error }));
+    newPeer.connect$().subscribe(connect => console.log({ connect }));
+    newPeer.tracks$().subscribe(trackData => console.log({ trackData }));
+
+    newPeer.stream$().subscribe(stream => {
+      console.log({ stream });
+      this.remoteStream = stream;
+    });
+    // console.log(this.remoteStream);
+    this.newPeer = newPeer;
+    this.peer.sendMsg(this.newPeerSdp);
+    // return newPeer;
+
   }
 
   async removeStreamFromConnection() {
@@ -112,11 +158,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   addAudioTrack() {
     this.peer.addTrack(this.stream.getAudioTracks()[0], this.stream);
+    this.newPeer = this.newPeerConnection();
+
   }
 
   addVideoTrack() {
     this.peer.addTrack(this.stream.getVideoTracks()[0], this.stream);
   }
+
 
   removeVideoTrack() {
     this.peer.removeTrack(this.stream.getVideoTracks()[0], this.stream);

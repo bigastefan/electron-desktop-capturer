@@ -11,6 +11,9 @@ export class BetterSimplePeer {
       trickle: false
     });
   }
+  sendMsg(sdp) {
+    this.peer.send(sdp);
+  }
 
   setSdp(sdp) {
     this.peer.signal(sdp);
