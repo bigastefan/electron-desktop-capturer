@@ -26,7 +26,7 @@ export class HomeComponent {
   private createPeer(isInitiator) {
     const peer = BetterSimplePeer.createInstance({
       initiator: isInitiator,
-      onConnect: () => console.log('connected'),
+      onConnect: () => this.connected(),
       onError: (instance) => {
         this.peers = this.peers.filter(p => p !== instance);
         console.log({ peers: this.peers });
@@ -38,12 +38,16 @@ export class HomeComponent {
       this.outgoing = JSON.stringify(sdp);
     });
 
-    peer.error$().subscribe(error => console.log({ error }));
-    peer.tracks$().subscribe(trackData => console.log({ trackData }));
-
     if (this.stream) peer.addStream(this.stream);
 
     return peer;
+  }
+
+  connected() {
+    console.log('connected');
+    this.peers.forEach(peer => {
+      peer.sendMsg();
+    });
   }
 
   setAnswer(sdpValue: string, event) {
@@ -87,5 +91,11 @@ export class HomeComponent {
     const stream = await getDesktopMediaStream(sourceId);
     console.log(stream);
     this.stream = stream;
+  }
+
+  send() {
+    this.peers.forEach(peer => {
+      peer.sendMsg();
+    });
   }
 }

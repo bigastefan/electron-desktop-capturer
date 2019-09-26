@@ -21,11 +21,15 @@ export class BetterSimplePeer {
     return instance;
   }
 
-  constructor(initiator?: boolean) {
+  private constructor(initiator?: boolean) {
     this.peer = new SimplePeer({
       initiator,
       trickle: false
     });
+  }
+
+  sendMsg() {
+    this.peer.send('test');
   }
 
   setSdp(sdp) {
