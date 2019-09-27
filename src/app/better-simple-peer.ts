@@ -27,12 +27,17 @@ export class BetterSimplePeer {
       trickle: false
     });
   }
-  sendMsg(sdp) {
-    this.peer.send(sdp);
+
+  get isConnected() {
+    return this.peer.conected;
   }
 
-  sendMsg() {
-    this.peer.send('test');
+  get readyState() {
+    return this.peer.readyState;
+  }
+
+  sendMsg(msg) {
+    this.peer.send(msg);
   }
 
   setSdp(sdp) {

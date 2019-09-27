@@ -21,6 +21,9 @@ export class HomeComponent {
 
   createConnection(): void {
     this.peers.push(this.createPeer(true));
+
+
+
   }
 
   private createPeer(isInitiator) {
@@ -34,7 +37,11 @@ export class HomeComponent {
     });
 
     peer.sdp$().subscribe(sdp => {
+
       console.log({ sdp });
+
+
+
       this.outgoing = JSON.stringify(sdp);
     });
 
@@ -46,7 +53,7 @@ export class HomeComponent {
   connected() {
     console.log('connected');
     this.peers.forEach(peer => {
-      peer.sendMsg();
+      peer.sendMsg('new connection is created');
     });
   }
 
@@ -61,6 +68,13 @@ export class HomeComponent {
 
   setOffer(sdpValue: string, event) {
     if (!sdpValue) { return; }
+
+    this.peers.forEach(p => {
+      if (p.isConnected && p.readyState) {
+        p.sendMsg('send msg about new sdp' );
+
+      }
+    });
 
     event.preventDefault();
     const sdp = JSON.parse(sdpValue);
@@ -95,7 +109,11 @@ export class HomeComponent {
 
   send() {
     this.peers.forEach(peer => {
-      peer.sendMsg();
+      peer.sendMsg('send msg about new sdp');
     });
+  }
+
+  testMsg() {
+    this.peers[0].sendMsg('test msg');
   }
 }
