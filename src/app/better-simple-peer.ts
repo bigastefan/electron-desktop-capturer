@@ -6,6 +6,7 @@ export class BetterSimplePeer {
   peer;
   remoteStream: MediaStream;
   isConnected = false;
+  readyState = false;
 
   static createInstance(options: {
     initiator: boolean,
@@ -17,6 +18,7 @@ export class BetterSimplePeer {
 
     instance.connect$().subscribe(() => {
       instance.isConnected = true;
+      instance.readyState  = true;
       onConnect(instance);
     });
     instance.error$().subscribe(() => onError(instance));
@@ -36,9 +38,9 @@ export class BetterSimplePeer {
   //   return this.peer.conected;
   // }
 
-  get readyState() {
-    return this.peer.readyState;
-  }
+  // get readyState() {
+  //   return this.peer.readyState;
+  // }
 
   sendMsg(msg) {
     this.peer.send(msg);

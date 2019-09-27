@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import { BetterSimplePeer } from '../better-simple-peer';
 import { getUserMedia } from '../media-helpers';
 import { desktopCapturer, DesktopCapturerSource } from 'electron';
@@ -9,7 +9,7 @@ import { getDesktopMediaStream } from '../../stream-util';
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit{
   outgoing: string;
   desktopStream: any = null;
   stream: MediaStream;
@@ -19,6 +19,10 @@ export class HomeComponent {
 
   peers: BetterSimplePeer[] = [];
   tracks: MediaStreamTrack[] = [];
+
+  ngOnInit(): void {
+    // this.createConnection();
+  }
 
   createConnection(): void {
     this.peers.push(this.createPeer(true));
@@ -38,6 +42,23 @@ export class HomeComponent {
 
     peer.sdp$().subscribe(sdp => {
       console.log({ sdp });
+
+
+
+      const newSdp = JSON.stringify(sdp);
+      const newSdpOffer = {
+        type: 'offer',
+        sdp: newSdp
+      };
+
+      const offerString = JSON.stringify(newSdpOffer);
+
+
+      this.peers.forEach(p => {
+        if (p.isConnected && p.readyState) {
+          p.sendMsg( offerString );
+        }
+      });
       this.outgoing = JSON.stringify(sdp);
     });
 
@@ -71,7 +92,6 @@ export class HomeComponent {
     this.peers.forEach(p => {
       if (p.isConnected && p.readyState) {
         p.sendMsg('send msg about new sdp' );
-
       }
     });
 
@@ -93,6 +113,12 @@ export class HomeComponent {
     console.log('turned on');
     console.log({ stream });
     this.stream = stream;
+    this.tracks.push(stream);
+
+    this.peers.forEach(peer => {
+      peer.addStream(stream);
+    });
+
   }
 
   async desktopCapturing(newSource?: string) {
