@@ -18,30 +18,26 @@ export class HomeComponent {
   sources: DesktopCapturerSource[];
 
   peers: BetterSimplePeer[] = [];
+  tracks: MediaStreamTrack[] = [];
 
   createConnection(): void {
     this.peers.push(this.createPeer(true));
-
-
-
+    console.log(this.peers);
   }
 
   private createPeer(isInitiator) {
     const peer = BetterSimplePeer.createInstance({
       initiator: isInitiator,
-      onConnect: () => this.connected(),
+      onConnect: () => this.onConnect(),
       onError: (instance) => {
+        console.log('onError called');
         this.peers = this.peers.filter(p => p !== instance);
         console.log({ peers: this.peers });
       }
     });
 
     peer.sdp$().subscribe(sdp => {
-
       console.log({ sdp });
-
-
-
       this.outgoing = JSON.stringify(sdp);
     });
 
@@ -50,7 +46,7 @@ export class HomeComponent {
     return peer;
   }
 
-  connected() {
+  onConnect() {
     console.log('connected');
     this.peers.forEach(peer => {
       peer.sendMsg('new connection is created');
@@ -63,7 +59,10 @@ export class HomeComponent {
     console.log('setting answer');
     event.preventDefault();
     const sdp = JSON.parse(sdpValue);
-    this.peers.forEach(p => p.setSdp(sdp)); // for now
+    this.peers.filter(p => !p.isConnected).forEach(p => {
+      console.log('setting answer', p);
+      p.setSdp(sdp)
+    }); // for now
   }
 
   setOffer(sdpValue: string, event) {
@@ -104,7 +103,14 @@ export class HomeComponent {
   async selectSource(sourceId) {
     const stream = await getDesktopMediaStream(sourceId);
     console.log(stream);
-    this.stream = stream;
+    stream.getVideoTracks().forEach(t => this.stream.addTrack(t));
+    this.tracks = this.stream.getVideoTracks().map(t => {
+      const ms = new MediaStream();
+      ms.addTrack(t);
+      return ms as any;
+    });
+    console.log({ tracks: this.tracks });
+
   }
 
   send() {

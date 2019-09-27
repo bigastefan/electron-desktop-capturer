@@ -20,14 +20,16 @@
 
 
 <div style="width: 100%; display: flex;">
-<!--  <div *ngIf="stream">-->
-<!--    My video video-->
-<!--    <video [srcObject]="stream" autoplay></video>-->
-<!--  </div>-->
-  <div *ngFor="let peer of peers">
+ <div *ngIf="stream">
+    <div  *ngFor="let track of tracks">
+        My video video
+        <video [srcObject]="track" autoplay></video>
+    </div>
+ </div>
+  <!-- <div *ngFor="let peer of peers">
     Remote video
     <video *ngIf="peer.remoteStream" [srcObject]="peer.remoteStream" autoplay></video>
-  </div>
+  </div> -->
   <div>
     Desktop
     <div *ngFor="let source of sources" style="display: flex">

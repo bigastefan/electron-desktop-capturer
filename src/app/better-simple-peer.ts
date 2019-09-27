@@ -5,6 +5,7 @@ import SimplePeer from 'simple-peer';
 export class BetterSimplePeer {
   peer;
   remoteStream: MediaStream;
+  isConnected = false;
 
   static createInstance(options: {
     initiator: boolean,
@@ -14,7 +15,10 @@ export class BetterSimplePeer {
     const { initiator, onConnect, onError } = options;
     const instance = new BetterSimplePeer(initiator);
 
-    instance.connect$().subscribe(() => onConnect(instance));
+    instance.connect$().subscribe(() => {
+      instance.isConnected = true;
+      onConnect(instance);
+    });
     instance.error$().subscribe(() => onError(instance));
     instance.stream$().subscribe(stream => instance.remoteStream = stream);
 
@@ -28,9 +32,9 @@ export class BetterSimplePeer {
     });
   }
 
-  get isConnected() {
-    return this.peer.conected;
-  }
+  // get isConnected() {
+  //   return this.peer.conected;
+  // }
 
   get readyState() {
     return this.peer.readyState;
@@ -62,6 +66,10 @@ export class BetterSimplePeer {
 
   connect$() {
     return fromEvent(this.peer, 'connect');
+  }
+
+  messages$() {
+    return fromEvent(this.peer, 'data');
   }
 
   addStream(stream: MediaStream) {
