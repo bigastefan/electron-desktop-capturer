@@ -1,86 +1,53 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component } from '@angular/core';
 import { BetterSimplePeer } from '../better-simple-peer';
 import { getUserMedia } from '../media-helpers';
 import { desktopCapturer, DesktopCapturerSource } from 'electron';
+import { getDesktopMediaStream } from '../../stream-util';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
-export class HomeComponent implements OnInit, AfterViewInit {
-  // @ts-ignore
-  @ViewChild('desktopElement') desktopElement: ElementRef;
+export class HomeComponent {
   outgoing: string;
-  desktop: any = null;
-  newPeerSdp: any = null;
-  title = 'simple-peer-test';
-  msg = 'test';
+  desktopStream: any = null;
   stream: MediaStream;
-  remoteStream: MediaStream;
-  peer: BetterSimplePeer;
   newPeer: BetterSimplePeer;
   selectedSource: String;
-  list: DesktopCapturerSource[];
-  ngOnInit(): void {
-  }
+  sources: DesktopCapturerSource[];
 
-  ngAfterViewInit(): void {
-
-  }
+  peers: BetterSimplePeer[] = [];
 
   createConnection(): void {
-    const isInitiator = true;
-    console.log({ isInitiator });
-
-    if (!isInitiator) { return; }
-
-    this.peer = this.createPeer(isInitiator);
-  }
-
-  setOutgoing(value: string) {
-    this.outgoing = value;
+    this.peers.push(this.createPeer(true));
   }
 
   private createPeer(isInitiator) {
-    const peer = new BetterSimplePeer(isInitiator);
+    const peer = BetterSimplePeer.createInstance({
+      initiator: isInitiator,
+      onConnect: () => this.connected(),
+      onError: (instance) => {
+        this.peers = this.peers.filter(p => p !== instance);
+        console.log({ peers: this.peers });
+      }
+    });
+
     peer.sdp$().subscribe(sdp => {
       console.log({ sdp });
-      this.setOutgoing(JSON.stringify(sdp));
+      this.outgoing = JSON.stringify(sdp);
     });
 
-    peer.error$().subscribe(error => console.log({ error }));
-    peer.connect$().subscribe(connect => console.log({ connect }));
-    peer.tracks$().subscribe(trackData => console.log({ trackData }));
+    if (this.stream) peer.addStream(this.stream);
 
-    peer.stream$().subscribe(stream => {
-      console.log({ stream });
-      this.remoteStream = stream;
-    });
-    console.log(this.remoteStream);
     return peer;
   }
 
-  newPeerConnection() {
-    const isNewInitiator = true;
-
-    const newPeer = new BetterSimplePeer(isNewInitiator);
-    newPeer.sdp$().subscribe(sdp => {
-      console.log('new sdp',{ sdp });
-      this.newPeerSdp = sdp;
-      this.setOutgoing(JSON.stringify(sdp));
+  connected() {
+    console.log('connected');
+    this.peers.forEach(peer => {
+      peer.sendMsg();
     });
-
-    newPeer.error$().subscribe(error => console.log({ error }));
-    newPeer.connect$().subscribe(connect => console.log({ connect }));
-    newPeer.tracks$().subscribe(trackData => console.log({ trackData }));
-
-    newPeer.stream$().subscribe(stream => {
-      console.log({ stream });
-      this.remoteStream = stream;
-    });
-    // console.log(this.remoteStream);
-    return newPeer;
   }
 
   setAnswer(sdpValue: string, event) {
@@ -89,7 +56,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     console.log('setting answer');
     event.preventDefault();
     const sdp = JSON.parse(sdpValue);
-    this.peer.setSdp(sdp);
+    this.peers.forEach(p => p.setSdp(sdp)); // for now
   }
 
   setOffer(sdpValue: string, event) {
@@ -104,12 +71,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
 
     newPeer.setSdp(sdp);
-    this.peer = newPeer;
-  }
-
-  send() {
-    // this.p.send(this.msg);
-    // this.msg = '';
+    this.peers.push(newPeer);
+    this.peers.forEach(p => p.setSdp(sdp)); // for now
   }
 
   async turnOnCamera() {
@@ -119,101 +82,20 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.stream = stream;
   }
 
-  turnOfCamera() {
-    // this.myVideo.nativeElement.srcObject = null;
-  }
-
-  async addStreamToConnection() {
-    // const newPeer = this.createPeer(true);
-    // newPeer.addStream(this.stream);
-    // this.peer = newPeer;
-
-    const isNewInitiator = true;
-
-    const newPeer = new BetterSimplePeer(isNewInitiator);
-    newPeer.sdp$().subscribe(sdp => {
-      console.log('new sdp',{ sdp });
-      this.newPeerSdp = sdp;
-      this.setOutgoing(JSON.stringify(sdp));
-    });
-
-    newPeer.error$().subscribe(error => console.log({ error }));
-    newPeer.connect$().subscribe(connect => console.log({ connect }));
-    newPeer.tracks$().subscribe(trackData => console.log({ trackData }));
-
-    newPeer.stream$().subscribe(stream => {
-      console.log({ stream });
-      this.remoteStream = stream;
-    });
-    // console.log(this.remoteStream);
-    this.newPeer = newPeer;
-    this.peer.sendMsg(this.newPeerSdp);
-    // return newPeer;
-
-  }
-
-  async removeStreamFromConnection() {
-    this.peer.removeStream(this.stream);
-  }
-
-  addAudioTrack() {
-    this.peer.addTrack(this.stream.getAudioTracks()[0], this.stream);
-    this.newPeer = this.newPeerConnection();
-
-  }
-
-  addVideoTrack() {
-    this.peer.addTrack(this.stream.getVideoTracks()[0], this.stream);
-  }
-
-
-  removeVideoTrack() {
-    this.peer.removeTrack(this.stream.getVideoTracks()[0], this.stream);
-  }
-
   async desktopCapturing(newSource?: string) {
     const sources = await desktopCapturer.getSources({ types: ['window', 'screen'] });
-      this.list = sources;
-
-      console.log(this.list);
-      this.selectedSource = sources[0].name;
-      for (const source of sources.filter(s => s.name === newSource)) {
-          try {
-            const streamDesktop = await (<any>navigator.mediaDevices).getUserMedia({
-              audio: false,
-              video:
-              {
-                mandatory: {
-                  chromeMediaSource: 'desktop',
-                  chromeMediaSourceId: source.id,
-                  minWidth: 1280,
-                  maxWidth: 1280,
-                  minHeight: 720,
-                  maxHeight: 720
-                }
-              }
-            });
-
-            this.handleStream(streamDesktop);
-          } catch (e) {
-            console.log(e);
-          }
-          return;
-      }
+    this.sources = sources;
   }
 
-  handleStream(stream: MediaStream) {
-    console.log('desktop', stream);
-
-    if (!this.stream) {
-      this.stream = stream;
-    } else {
-      this.stream.getVideoTracks().forEach(t => this.stream.removeTrack(t));
-      stream.getVideoTracks().forEach(t => this.stream.addTrack(t));
-    }
-
-    this.addStreamToConnection();
-    this.desktopElement.nativeElement.srcObject = stream;
+  async selectSource(sourceId) {
+    const stream = await getDesktopMediaStream(sourceId);
+    console.log(stream);
+    this.stream = stream;
   }
 
+  send() {
+    this.peers.forEach(peer => {
+      peer.sendMsg();
+    });
+  }
 }

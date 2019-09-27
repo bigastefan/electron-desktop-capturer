@@ -4,8 +4,24 @@ import SimplePeer from 'simple-peer';
 
 export class BetterSimplePeer {
   peer;
+  remoteStream: MediaStream;
 
-  constructor(initiator?: boolean) {
+  static createInstance(options: {
+    initiator: boolean,
+    onConnect: (instance: BetterSimplePeer) => void,
+    onError: (instance: BetterSimplePeer) => void
+  }) {
+    const { initiator, onConnect, onError } = options;
+    const instance = new BetterSimplePeer(initiator);
+
+    instance.connect$().subscribe(() => onConnect(instance));
+    instance.error$().subscribe(() => onError(instance));
+    instance.stream$().subscribe(stream => instance.remoteStream = stream);
+
+    return instance;
+  }
+
+  private constructor(initiator?: boolean) {
     this.peer = new SimplePeer({
       initiator,
       trickle: false
@@ -13,6 +29,10 @@ export class BetterSimplePeer {
   }
   sendMsg(sdp) {
     this.peer.send(sdp);
+  }
+
+  sendMsg() {
+    this.peer.send('test');
   }
 
   setSdp(sdp) {
