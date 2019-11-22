@@ -113,7 +113,8 @@ export class HomeComponent implements OnInit{
     console.log('turned on');
     console.log({ stream });
     this.stream = stream;
-    this.tracks.push(stream);
+
+    // this.tracks.push(stream);
 
     this.peers.forEach(peer => {
       peer.addStream(stream);
@@ -122,7 +123,7 @@ export class HomeComponent implements OnInit{
   }
 
   async desktopCapturing(newSource?: string) {
-    const sources = await desktopCapturer.getSources({ types: ['window', 'screen'] });
+    const sources = await desktopCapturer.getSources({ types: ['screen'] });
     this.sources = sources;
   }
 
